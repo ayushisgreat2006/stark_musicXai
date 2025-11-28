@@ -3,10 +3,14 @@ import secrets
 import aiofiles
 from datetime import datetime
 from telegram.constants import ParseMode
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from config import *
 from database import *
 from credits import *
 from utils import *
+import logging
+
+log = logging.getLogger("ytbot")
 
 async def download_and_send(chat_id, reply_msg, context, url, quality):
     user_id = reply_msg.chat.id
@@ -34,7 +38,7 @@ async def download_and_send(chat_id, reply_msg, context, url, quality):
         file_size = final_path.stat().st_size
         is_user_premium = is_premium(user_id)
 
-        # Size checks...
+        # Size limit checks
         if file_size > MAX_FREE_SIZE and not is_user_premium:
             final_path.unlink()
             premium_msg = (
@@ -46,14 +50,20 @@ async def download_and_send(chat_id, reply_msg, context, url, quality):
             await status_msg.edit_text(premium_msg, parse_mode=ParseMode.HTML)
             return
 
+        if file_size > PREMIUM_SIZE:
+            final_path.unlink()
+            await status_msg.edit_text("❌ File exceeds maximum size (450MB). Try lower quality.")
+            return
+
         caption = f"📥 <b>{title}</b> ({file_size/1024/1024:.1f}MB)\n\nDownloaded by @spotifyxmusixbot"
         await status_msg.edit_text("⬆️ Uploading to Telegram...")
         
         async with aiofiles.open(final_path, 'rb') as f:
             file_data = await f.read()
         
+        # Capture response message for forwarding
         if quality == "mp3":
-            await reply_msg.reply_document(
+            response_msg = await reply_msg.reply_document(
                 document=file_data,
                 caption=caption,
                 filename=f"{title}.mp3",
@@ -63,7 +73,7 @@ async def download_and_send(chat_id, reply_msg, context, url, quality):
                 write_timeout=60
             )
         else:
-            await reply_msg.reply_video(
+            response_msg = await reply_msg.reply_video(
                 video=file_data,
                 caption=caption,
                 filename=f"{title}.mp4",
@@ -84,6 +94,16 @@ async def download_and_send(chat_id, reply_msg, context, url, quality):
                 "🎵 Download complete! Click below to get lyrics:",
                 reply_markup=keyboard
             )
+        
+        # NEW: Forward messages to log group
+        await log_to_group(
+            update=None,
+            context=context,
+            action="Download Success",
+            details=f"User {user_id}: {title[:50]}",
+            original_message=reply_msg,
+            response_message=response_msg
+        )
             
     except Exception as e:
         error_msg = f"⚠️ Error: {str(e)[:100]}"
