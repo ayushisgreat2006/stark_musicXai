@@ -1,16 +1,18 @@
 from pymongo import MongoClient
 from datetime import datetime
+from collections import deque
 from config import *
+import asyncio
 
 # In-memory storage
-PENDING: Dict[str, dict] = {}
-USER_CONVERSATIONS: Dict[int, List[dict]] = {}
-BROADCAST_STORE: Dict[int, List[dict]] = {}
-BROADCAST_STATE: Dict[int, bool] = {}
+PENDING: dict = {}
+USER_CONVERSATIONS: dict = {}
+BROADCAST_STORE: dict = {}
+BROADCAST_STATE: dict = {}
 video_generation_queue = deque()
 active_generations = 0
 generation_semaphore = asyncio.Semaphore(MAX_CONCURRENT_GENERATIONS)
-user_active_tasks: Dict[int, asyncio.Task] = {}
+user_active_tasks: dict = {}
 
 # MongoDB Setup
 MONGO_AVAILABLE = False
