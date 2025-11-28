@@ -1,11 +1,12 @@
 from datetime import datetime
 from database import *
 from config import *
+from utils import is_admin
 
 def get_today_str() -> str:
     return datetime.now().strftime("%Y-%m-%d")
 
-# AI/GPT Credits (existing)
+# AI/GPT Credits
 async def get_user_credits(user_id: int) -> tuple[int, int, bool]:
     if not MONGO_AVAILABLE:
         return BASE_CREDITS, 0, False
@@ -60,6 +61,19 @@ async def consume_credit(user_id: int) -> bool:
         )
     
     return True
+
+async def add_credits(user_id: int, amount: int) -> bool:
+    if not MONGO_AVAILABLE:
+        return False
+    try:
+        users_col.update_one(
+            {"_id": user_id},
+            {"$inc": {"credits": amount}},
+            upsert=True
+        )
+        return True
+    except Exception as e:
+        return False
 
 # Video Generation Credits (NEW)
 async def get_user_video_credits(user_id: int) -> tuple[int, int]:
@@ -117,7 +131,6 @@ async def add_video_credits(user_id: int, amount: int) -> bool:
         return False
     
     try:
-        # Increase the limit (not consumed credits)
         users_col.update_one(
             {"_id": user_id},
             {"$inc": {"video_gen_limit": amount}},
