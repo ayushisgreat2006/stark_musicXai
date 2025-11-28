@@ -17,6 +17,6 @@ A powerful Telegram bot for downloading YouTube content, generating AI media, an
 
 1. **Clone & Install**
 ```bash
-git clone (https://github.com/ayushisgreat2006/stark_musicXai)
+git clone https://github.com/ayushisgreat2006/stark_musicXai
 cd bot
 pip install -r requirements.txt
