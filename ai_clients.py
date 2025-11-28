@@ -9,6 +9,7 @@ from config import *
 groq_client = None
 if GROQ_API_KEY:
     try:
+        from groq import Groq
         groq_client = Groq(api_key=GROQ_API_KEY)
     except Exception as e:
         print(f"❌ Failed to initialize Groq: {e}")
@@ -44,6 +45,9 @@ class GeminiGenAPI:
             form.add_field('prompt', prompt)
             form.add_field('model', 'veo-3-fast')
             form.add_field('duration', '8')
+            form.add_field('resolution', '720p')
+            form.add_field('aspect_ratio', '16:9')
+            form.add_field('enhance_prompt', 'true')
             
             async with session.post(f"{self.base_url}/api/video-gen/veo", data=form) as resp:
                 if resp.status not in (200, 202):
